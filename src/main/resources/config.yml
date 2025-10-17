@@ -1,0 +1,30 @@
+# Список разрешенных мобов для спавнеров
+# Добавляйте сюда только тех мобоб, которых можно помещать в спавнеры
+allowed-spawner-mobs:
+  - BLAZE
+  - PIGLIN
+  - COW
+  - WOLF
+  - SHEEP
+  - SHULKER
+  - SPIDER
+  - ENDERMAN
+  - SLIME
+  - ZOMBIE
+  - SKELETON
+  - CREEPER
+  - DROWNED
+  - MOOSHROOM
+  - CHICKEN
+  - GHAST
+  - MAGMA_CUBE
+  - PHANTOM
+  - POLAR_BEAR
+  - BOGGED
+  - GUARDIAN
+  - BREEZE
+  - RABBIT
+  - HORSE
+  - ARMADILLO
+  - TURTLE
+  - PIG

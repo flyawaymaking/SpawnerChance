@@ -1,0 +1,15 @@
+name: SpawnerChance
+main: com.flyaway.spawnerchance.SpawnerChance
+version: 1.0.0
+api-version: "1.21"
+description: Плагин дающий шанс выпадения спавнера. Ограничивает мобов, которых можно применять к спавнеру.
+author: FlyAwayMaking
+website: https://github.com/flyawaymaking
+
+permissions:
+  spawner.dropchance.*:
+    description: Шанс выпадения спавнера в %
+    default: false
+  spawner.bypass:
+    description: Обход ограничений на установку мобов в спавнер
+    default: op
