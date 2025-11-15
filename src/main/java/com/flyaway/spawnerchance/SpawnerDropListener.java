@@ -38,7 +38,7 @@ public class SpawnerDropListener implements Listener {
         if (event.getExpToDrop() == 0) return; // Already processed
 
         Player player = event.getPlayer();
-        int chance = getDropChance(player);
+        int chance = plugin.getDropChance(player);
         if (chance <= 0) return;
 
         double roll = random.nextDouble() * 100;
@@ -76,7 +76,7 @@ public class SpawnerDropListener implements Listener {
 
         String formatted = message.replace("{mob-spawner}", spawnerName).replace("{chance}", String.valueOf(chance));
 
-        player.sendMessage(miniMessage.deserialize(formatted));
+        plugin.sendMessage(player, miniMessage.deserialize(formatted));
     }
 
     private ItemStack createSpawnerItem(@NotNull CreatureSpawner spawner, @NotNull String spawnerName) {
@@ -115,25 +115,5 @@ public class SpawnerDropListener implements Listener {
 
     private String getTranslationForKey(@NotNull String key, @NotNull Locale locale) {
         return languageManager.translateToString(Component.translatable(key), locale);
-    }
-
-    private int getDropChance(Player player) {
-        int maxChance = 0;
-
-        for (var perm : player.getEffectivePermissions()) {
-            String permission = perm.getPermission().toLowerCase();
-            String PREFIX = "spawner.dropchance.";
-
-            if (permission.startsWith(PREFIX)) {
-                try {
-                    int value = Integer.parseInt(permission.substring(PREFIX.length()));
-                    if (value > maxChance) {
-                        maxChance = value;
-                        if (maxChance >= 100) break;
-                    }
-                } catch (NumberFormatException ignored) {}
-            }
-        }
-        return maxChance;
     }
 }

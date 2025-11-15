@@ -40,7 +40,7 @@ public class SpawnerRestrictionListener implements Listener {
                 !itemInHand.getType().name().endsWith("_SPAWN_EGG")) return;
 
         if (player.hasPermission("spawner.bypass")) {
-            player.sendMessage(miniMessage.deserialize(configManager.getMessage("bypass")));
+            plugin.sendMessage(player, miniMessage.deserialize(configManager.getMessage("bypass")));
             return;
         }
 
@@ -52,11 +52,11 @@ public class SpawnerRestrictionListener implements Listener {
         if (!plugin.getConfigManager().isMobAllowedInSpawner(entityType)) {
             event.setCancelled(true);
 
-            player.sendMessage(miniMessage.deserialize(configManager.getMessage("egg-set-error").replace("{mob}", mobName)));
+            plugin.sendMessage(player, miniMessage.deserialize(configManager.getMessage("egg-set-error").replace("{mob}", mobName)));
             return;
         }
 
-        player.sendMessage(miniMessage.deserialize(configManager.getMessage("egg-set-success").replace("{mob}", mobName)));
+        plugin.sendMessage(player, miniMessage.deserialize(configManager.getMessage("egg-set-success").replace("{mob}", mobName)));
     }
 
     private EntityType getEntityTypeFromSpawnEgg(ItemStack item) {

@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
+    private final SpawnerChance plugin;
     private final ConfigManager configManager;
     private final LanguageManager languageManager;
     private final TempChanceManager tempChanceManager;
@@ -19,6 +20,7 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
     private final Locale defaulLocale = Locale.forLanguageTag("ru-RU");
 
     public SpawnerChanceCommand(SpawnerChance plugin) {
+        this.plugin = plugin;
         this.configManager = plugin.getConfigManager();
         this.languageManager = plugin.getLanguageManager();
         this.tempChanceManager = plugin.getTempChanceManager();
@@ -30,7 +32,7 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
         // Проверка основного права доступа к командам плагина
         if (!sender.hasPermission("spawner.command.use") && !(sender instanceof ConsoleCommandSender)) {
             String noPermission = configManager.getMessage("no-permission");
-            sender.sendMessage(miniMessage.deserialize(noPermission));
+            plugin.sendMessage(sender, miniMessage.deserialize(noPermission));
             return true;
         }
 
@@ -62,7 +64,7 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
         tempChanceManager.cleanupExpiredChances();
 
         String reloadSuccess = configManager.getMessage("reload-success");
-        sender.sendMessage(miniMessage.deserialize(reloadSuccess));
+        plugin.sendMessage(sender, miniMessage.deserialize(reloadSuccess));
     }
 
     private void infoCommand(CommandSender sender) {
@@ -106,21 +108,21 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
             mobsInfo = miniMessage.deserialize(mobsMessage);
         }
 
-        sender.sendMessage(durationInfo);
-        sender.sendMessage(mobsInfo);
+        plugin.sendMessage(sender, durationInfo);
+        plugin.sendMessage(sender, mobsInfo);
     }
 
     private void tempChanceCommand(CommandSender sender, String[] args) {
         if (args.length < 3) {
             String usage = configManager.getMessage("tempchance-usage");
-            sender.sendMessage(miniMessage.deserialize(usage));
+            plugin.sendMessage(sender, miniMessage.deserialize(usage));
             return;
         }
 
         Player target = Bukkit.getPlayer(args[1]);
         if (target == null) {
             String playerNotFound = configManager.getMessage("player-not-found");
-            sender.sendMessage(miniMessage.deserialize(playerNotFound));
+            plugin.sendMessage(sender, miniMessage.deserialize(playerNotFound));
             return;
         }
 
@@ -129,12 +131,12 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
             chance = Integer.parseInt(args[2]);
             if (chance < 1 || chance > 100) {
                 String invalidChance = configManager.getMessage("invalid-chance-range");
-                sender.sendMessage(miniMessage.deserialize(invalidChance));
+                plugin.sendMessage(sender, miniMessage.deserialize(invalidChance));
                 return;
             }
         } catch (NumberFormatException e) {
             String invalidNumber = configManager.getMessage("invalid-number");
-            sender.sendMessage(miniMessage.deserialize(invalidNumber));
+            plugin.sendMessage(sender, miniMessage.deserialize(invalidNumber));
             return;
         }
 
@@ -153,25 +155,25 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
                     .replace("{player}", target.getName())
                     .replace("{chance}", String.valueOf(chance))
                     .replace("{duration}", durationText);
-            sender.sendMessage(miniMessage.deserialize(senderMessage));
+            plugin.sendMessage(sender, miniMessage.deserialize(senderMessage));
 
             // Сообщение для целевого игрока
             String targetMessage = configManager.getMessage("tempchance-success-target")
                     .replace("{chance}", String.valueOf(chance))
                     .replace("{duration}", durationText);
-            target.sendMessage(miniMessage.deserialize(targetMessage));
+            plugin.sendMessage(target, miniMessage.deserialize(targetMessage));
         } else {
-            int currentChance = tempChanceManager.getCurrentChance(target);
+            int currentChance = plugin.getDropChance(target);
             String alreadyHasChance = configManager.getMessage("player-already-has-chance")
                     .replace("{player}", target.getName())
                     .replace("{chance}", String.valueOf(currentChance));
-            sender.sendMessage(miniMessage.deserialize(alreadyHasChance));
+            plugin.sendMessage(sender, miniMessage.deserialize(alreadyHasChance));
         }
     }
 
     private void sendHelp(CommandSender sender) {
         String helpMessage = configManager.getMessage("help");
-        sender.sendMessage(miniMessage.deserialize(helpMessage));
+        plugin.sendMessage(sender, miniMessage.deserialize(helpMessage));
     }
 
     @Override
