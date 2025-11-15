@@ -1,149 +1,135 @@
 package com.flyaway.spawnerchance;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.CreatureSpawner;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
+import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
+import java.util.Locale;
 import java.util.Random;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class SpawnerDropListener implements Listener {
-
     private final SpawnerChance plugin;
+    private final LanguageManager languageManager;
+    private final ConfigManager configManager;
+    private final MiniMessage miniMessage = MiniMessage.miniMessage();
     private final Random random = new Random();
 
     public SpawnerDropListener(SpawnerChance plugin) {
         this.plugin = plugin;
+        this.configManager = plugin.getConfigManager();
+        this.languageManager = plugin.getLanguageManager();
     }
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        Block block = event.getBlock();
+        if (event.isCancelled() || event.getBlock().getType() != Material.SPAWNER) return;
+        if (event.getExpToDrop() == 0) return; // Already processed
+
         Player player = event.getPlayer();
+        int chance = getDropChance(player);
+        if (chance <= 0) return;
 
-        if (block.getType() == Material.SPAWNER) {
-            CreatureSpawner spawner = (CreatureSpawner) block.getState();
-            int chance = getDropChance(player);
-
-            if (chance > 0) {
-                double roll = random.nextDouble() * 100;
-                if (roll < chance) {
-                    ItemStack spawnerItem = createSpawnerItem(spawner);
-                    block.getWorld().dropItemNaturally(block.getLocation(), spawnerItem);
-
-                    // Paper: Отменяем стандартный дроп спавнера
-                    event.setDropItems(false);
-
-                    String mobName = getMobDisplayName(spawner.getSpawnedType());
-                    player.sendMessage("§aУдача! Спавнер " + mobName + " выпал (" + chance + "%)");
-                } else {
-                    player.sendMessage("§cСпавнер не выпал (" + chance + "%)");
-                }
-            }
+        double roll = random.nextDouble() * 100;
+        if (roll < chance) {
+            handleSuccessfulDrop(event, player, chance);
+        } else {
+            handleFailedDrop(player, chance);
         }
     }
 
-    private ItemStack createSpawnerItem(CreatureSpawner spawner) {
-        ItemStack spawnerItem = new ItemStack(Material.SPAWNER, 1);
+    private void handleSuccessfulDrop(BlockBreakEvent event, Player player, int chance) {
+        event.setDropItems(false);
+        event.setExpToDrop(0);
+
+        Locale locale = player.locale();
+        CreatureSpawner spawner = (CreatureSpawner) event.getBlock().getState();
+
+        String mobName = getMobDisplayName(spawner.getSpawnedType(), locale);
+        String spawnerName = getTranslationForKey("block.minecraft.spawner", locale);
+        String spawnerRawName = configManager.getMessage("mob-spawner").replace("{spawner}", spawnerName).replace("{mob}", mobName);
+
+        ItemStack spawnerItem = createSpawnerItem(spawner, spawnerRawName);
+        event.getBlock().getWorld().dropItemNaturally(event.getBlock().getLocation(), spawnerItem);
+
+        sendMessage(player, "drop-success", spawnerRawName, chance);
+    }
+
+    private void handleFailedDrop(Player player, int chance) {
+        sendMessage(player, "drop-failure", "", chance);
+    }
+
+    private void sendMessage(Player player, String messageKey, String spawnerName, int chance) {
+        String message = configManager.getMessage(messageKey);
+        if (message.isEmpty()) return;
+
+        String formatted = message.replace("{mob-spawner}", spawnerName).replace("{chance}", String.valueOf(chance));
+
+        player.sendMessage(miniMessage.deserialize(formatted));
+    }
+
+    private ItemStack createSpawnerItem(@NotNull CreatureSpawner spawner, @NotNull String spawnerName) {
+        ItemStack spawnerItem = new ItemStack(Material.SPAWNER);
 
         BlockStateMeta meta = (BlockStateMeta) spawnerItem.getItemMeta();
-        if (meta != null) {
-            CreatureSpawner spawnerMeta = (CreatureSpawner) meta.getBlockState();
+        if (meta == null) return spawnerItem;
 
-            // Копируем все данные из оригинального спавнера
-            spawnerMeta.setSpawnedType(spawner.getSpawnedType());
-            spawnerMeta.setDelay(spawner.getDelay());
-            spawnerMeta.setMinSpawnDelay(spawner.getMinSpawnDelay());
-            spawnerMeta.setMaxSpawnDelay(spawner.getMaxSpawnDelay());
-            spawnerMeta.setSpawnCount(spawner.getSpawnCount());
-            spawnerMeta.setMaxNearbyEntities(spawner.getMaxNearbyEntities());
-            spawnerMeta.setRequiredPlayerRange(spawner.getRequiredPlayerRange());
-            spawnerMeta.setSpawnRange(spawner.getSpawnRange());
+        CreatureSpawner target = (CreatureSpawner) meta.getBlockState();
 
-            meta.setBlockState(spawnerMeta);
+        target.setSpawnedType(spawner.getSpawnedType());
 
-            // Устанавливаем только название без лишнего описания
-            String mobName = getMobDisplayName(spawner.getSpawnedType());
-            meta.setDisplayName("§6Спавнер " + mobName);
-            meta.setLore(new java.util.ArrayList<>());
+        meta.setBlockState(target);
 
-            spawnerItem.setItemMeta(meta);
+        if (spawner.getSpawnedType() != null) {
+            meta.getPersistentDataContainer().set(
+                    new NamespacedKey(plugin, "spawner-type"),
+                    PersistentDataType.STRING,
+                    spawner.getSpawnedType().name()
+            );
         }
 
+        meta.displayName(miniMessage.deserialize(spawnerName));
+        meta.lore(List.of());
+
+        spawnerItem.setItemMeta(meta);
         return spawnerItem;
     }
 
-    private String getMobDisplayName(org.bukkit.entity.EntityType entityType) {
+    private String getMobDisplayName(EntityType entityType, @NotNull Locale locale) {
         if (entityType == null) {
-            return "§7Пустой";
+            return configManager.getMessage("empty-spawner-name");
         }
+        return getTranslationForKey(entityType.translationKey(), locale);
+    }
 
-        // Русские названия для популярных мобов
-        switch (entityType) {
-            case BLAZE: return "Ифрит";
-            case PIGLIN: return "Пиглин";
-            case COW: return "Корова";
-            case WOLF: return "Волк";
-            case SHEEP: return "Овца";
-            case SHULKER: return "Шалкер";
-            case SPIDER: return "Паук";
-            case ENDERMAN: return "Эндермен";
-            case SLIME: return "Слизь";
-            case ZOMBIE: return "Зомби";
-            case SKELETON: return "Скелет";
-            case CREEPER: return "Крипер";
-            case DROWNED: return "Утопленник";
-            case MOOSHROOM: return "Муушрум";
-            case CHICKEN: return "Курица";
-            case GHAST: return "Гаст";
-            case MAGMA_CUBE: return "Магмовый куб";
-            case PHANTOM: return "Фантом";
-            case POLAR_BEAR: return "Белый медведь";
-            case BOGGED: return "Болотник";
-            case GUARDIAN: return "Страж";
-            case BREEZE: return "Вихрь";
-            case RABBIT: return "Кролик";
-            case HORSE: return "Лошадь";
-            case ARMADILLO: return "Броненосец";
-            case TURTLE: return "Черепаха";
-            case PIG: return "Свинья";
-            default:
-                // Для остальных мобов используем автоматическое преобразование
-                String name = entityType.name().toLowerCase();
-                String[] words = name.split("_");
-                StringBuilder displayName = new StringBuilder();
-
-                for (String word : words) {
-                    if (!word.isEmpty()) {
-                        displayName.append(Character.toUpperCase(word.charAt(0)))
-                                  .append(word.substring(1))
-                                  .append(" ");
-                    }
-                }
-
-                return displayName.toString().trim();
-        }
+    private String getTranslationForKey(@NotNull String key, @NotNull Locale locale) {
+        return languageManager.translateToString(Component.translatable(key), locale);
     }
 
     private int getDropChance(Player player) {
-        Set<String> permissions = player.getEffectivePermissions().stream()
-                .map(perm -> perm.getPermission().toLowerCase())
-                .collect(Collectors.toSet());
-
         int maxChance = 0;
-        for (String perm : permissions) {
-            if (perm.startsWith("spawner.dropchance.")) {
+
+        for (var perm : player.getEffectivePermissions()) {
+            String permission = perm.getPermission().toLowerCase();
+            String PREFIX = "spawner.dropchance.";
+
+            if (permission.startsWith(PREFIX)) {
                 try {
-                    int value = Integer.parseInt(perm.replace("spawner.dropchance.", ""));
+                    int value = Integer.parseInt(permission.substring(PREFIX.length()));
                     if (value > maxChance) {
                         maxChance = value;
+                        if (maxChance >= 100) break;
                     }
                 } catch (NumberFormatException ignored) {}
             }
