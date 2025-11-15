@@ -64,35 +64,29 @@ public class ConfigManager {
     }
 
     public boolean isMobAllowedInSpawner(EntityType entityType) {
-        return allowedSpawnerMobs.contains(entityType);
+        return allowedSpawnerMobs.isEmpty() || allowedSpawnerMobs.contains(entityType);
+    }
+
+    public long getTempChanceDuration() {
+        return config.getLong("temp-chance-duration", 60L); // Конвертируем в минутах
+    }
+
+    public long getCleanupInterval() {
+        return config.getLong("cleanup-interval", 5L); // В секундах
     }
 
     public Set<EntityType> getAllowedSpawnerMobs() {
         return Collections.unmodifiableSet(allowedSpawnerMobs);
     }
 
+    public String getMessage(String key) {
+        String message = config.getString("messages." + key, "<red>message." + key + " not-found");
+        return message.replaceAll("\\s+$", "");
+    }
+
     public void reloadConfig() {
         plugin.reloadConfig();
         this.config = plugin.getConfig();
         loadAllowedSpawnerMobs();
-    }
-
-    public void addAllowedMob(EntityType entityType) {
-        allowedSpawnerMobs.add(entityType);
-        saveAllowedMobsToConfig();
-    }
-
-    public void removeAllowedMob(EntityType entityType) {
-        allowedSpawnerMobs.remove(entityType);
-        saveAllowedMobsToConfig();
-    }
-
-    private void saveAllowedMobsToConfig() {
-        List<String> mobNames = new ArrayList<>();
-        for (EntityType type : allowedSpawnerMobs) {
-            mobNames.add(type.name());
-        }
-        config.set("allowed-spawner-mobs", mobNames);
-        plugin.saveConfig();
     }
 }

@@ -1,30 +1,68 @@
-# Список разрешенных мобов для спавнеров
-# Добавляйте сюда только тех мобоб, которых можно помещать в спавнеры
-allowed-spawner-mobs:
-  - BLAZE
-  - PIGLIN
-  - COW
-  - WOLF
-  - SHEEP
-  - SHULKER
-  - SPIDER
-  - ENDERMAN
-  - SLIME
-  - ZOMBIE
-  - SKELETON
-  - CREEPER
-  - DROWNED
-  - MOOSHROOM
-  - CHICKEN
-  - GHAST
-  - MAGMA_CUBE
-  - PHANTOM
-  - POLAR_BEAR
-  - BOGGED
-  - GUARDIAN
-  - BREEZE
-  - RABBIT
-  - HORSE
-  - ARMADILLO
-  - TURTLE
-  - PIG
+# Время (в минутах) на которое даётся временный шанс выпадения
+temp-chance-duration: 15
+# Интервал очистки (в секундах) истёкших временных прав
+cleanup-interval: 10
+
+# Основные сообщения плагина
+messages:
+  # Сообщения выпадения спавнера
+  mob-spawner: "<gold>{spawner} <gray>{mob}"
+  empty-spawner-name: "Пустой"
+  drop-success: "<green>Удача! {mob-spawner} выпал (шанс {chance}%)"
+  drop-failure: "<red>Спавнер не выпал (шанс {chance}%)"
+  # Сообщения добавления моба в спавнер
+  bypass: "<gold>Вы обошли ограничения спавнера!"
+  unknown-mob: "<red>Неизвестный"
+  egg-set-error: "<red>Ошибка: Яйцо {mob} нельзя поместить в спавнер!"
+  egg-set-success: "<green>Вы установили спавнер для: {mob}"
+  # Сообщения команд:
+  no-permission: "<red>У вас нет прав на эту команду!</red>"
+  player-not-found: "<red>Игрок не найден или не в сети!</red>"
+  invalid-number: "<red>Число должно быть целым!</red>"
+  reload-success: "<green>Конфигурация плагина перезагружена!</green>"
+  tempchance-usage: "<red>Использование: /spawnerchance tempchance <игрок> <шанс></red>"
+  invalid-chance-range: "<red>Шанс должен быть от 1 до 100!</red>"
+  tempchance-success-sender: "<green>Игроку {player} выдан шанс {chance}% на {duration}</green>"
+  tempchance-success-target: "<gold>Вам выдан временный шанс {chance}% на выпадение спавнера на {duration}!</gold>"
+  player-already-has-chance: "<yellow>Игрок {player} уже имеет шанс {chance}%</yellow>"
+  info-duration: "<gold>Временные права выдаются на: <white>{hours}ч {minutes}м</white></gold>"
+  info-mobs-all: "<gold>Доступные яйца мобов: <white>Все</white></gold>"
+  info-mobs-list: "<gold>Доступные яйца мобов: {mobs}</gold>"
+  help: |
+    <gold>=== SpawnerChance Команды ===</gold>
+    <yellow>/spawnerchance reload</yellow> - Перезагрузить конфиг
+    <yellow>/spawnerchance info</yellow> - Информация о плагине
+    <yellow>/spawnerchance tempchance <игрок> <шанс></yellow> - Выдать временный шанс
+
+# Список разрешенных мобов для спавнеров (Добавляйте сюда только тех мобов, которых можно помещать в спавнер)
+# Оставьте пустым, чтобы разрешить всех мобов
+allowed-spawner-mobs: []
+#  - BLAZE
+#  - PIGLIN
+#  - COW
+#  - WOLF
+#  - SHEEP
+#  - SHULKER
+#  - SPIDER
+#  - ENDERMAN
+#  - SLIME
+#  - ZOMBIE
+#  - SKELETON
+#  - CREEPER
+#  - DROWNED
+#  - MOOSHROOM
+#  - CHICKEN
+#  - GHAST
+#  - MAGMA_CUBE
+#  - PHANTOM
+#  - POLAR_BEAR
+#  - BOGGED
+#  - GUARDIAN
+#  - BREEZE
+#  - RABBIT
+#  - HORSE
+#  - ARMADILLO
+#  - TURTLE
+#  - WITHER_SKELETON
+#  - ZOMBIFIED_PIGLIN
+#  - PIG
