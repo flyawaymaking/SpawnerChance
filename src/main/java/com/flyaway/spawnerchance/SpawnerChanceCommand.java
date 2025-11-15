@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
+    private final SpawnerChance plugin;
     private final ConfigManager configManager;
     private final LanguageManager languageManager;
     private final TempChanceManager tempChanceManager;
@@ -19,6 +20,7 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
     private final Locale defaulLocale = Locale.forLanguageTag("ru-RU");
 
     public SpawnerChanceCommand(SpawnerChance plugin) {
+        this.plugin = plugin;
         this.configManager = plugin.getConfigManager();
         this.languageManager = plugin.getLanguageManager();
         this.tempChanceManager = plugin.getTempChanceManager();
@@ -161,7 +163,7 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
                     .replace("{duration}", durationText);
             target.sendMessage(miniMessage.deserialize(targetMessage));
         } else {
-            int currentChance = tempChanceManager.getCurrentChance(target);
+            int currentChance = plugin.getDropChance(target);
             String alreadyHasChance = configManager.getMessage("player-already-has-chance")
                     .replace("{player}", target.getName())
                     .replace("{chance}", String.valueOf(currentChance));
