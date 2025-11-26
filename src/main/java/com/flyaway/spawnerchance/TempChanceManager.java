@@ -24,7 +24,7 @@ public class TempChanceManager {
     private final SpawnerChance plugin;
     private final File tempChancesFile;
     private FileConfiguration tempChancesConfig;
-    private ConfigManager configManager;
+    private final ConfigManager configManager;
     private LuckPerms luckPerms;
     private BukkitRunnable updateTask;
 

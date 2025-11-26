@@ -30,7 +30,6 @@ public class SpawnerChance extends JavaPlugin {
         // Инициализация менеджеров
         this.configManager = new ConfigManager(this);
         this.languageManager = new LanguageManager(this);
-        languageManager.load();
         this.tempChanceManager = new TempChanceManager(this);
         startCleanupTask();
 

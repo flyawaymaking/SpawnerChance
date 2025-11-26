@@ -1,55 +1,105 @@
 package com.flyaway.spawnerchance;
 
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TranslatableComponent;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import net.kyori.adventure.translation.GlobalTranslator;
-import org.jetbrains.annotations.NotNull;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import org.bukkit.Material;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.EntityType;
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
+import java.io.File;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Map;
 
 public class LanguageManager {
 
     private final SpawnerChance plugin;
-    private final PlainTextComponentSerializer plainSerializer = PlainTextComponentSerializer.plainText();
-    private ResourceBundle bundle;
+    private final Gson gson = new GsonBuilder().create();
+    private final YamlConfiguration translations = new YamlConfiguration();
 
     public LanguageManager(SpawnerChance plugin) {
         this.plugin = plugin;
+        load();
     }
 
     public void load() {
-        try {
-            // Попытка загрузить файл перевода для русской локали
-            bundle = ResourceBundle.getBundle("lang.ru_ru");
+        String lang = plugin.getConfigManager().getLanguage().toLowerCase();
 
-            plugin.getLogger().info("Загружен русский перевод");
+        File file = new File(plugin.getDataFolder(), "translations/" + lang + ".yml");
+        file.getParentFile().mkdirs();
 
-        } catch (Exception e) {
-            plugin.getLogger().warning("Ошибка загрузки переводов: " + e.getMessage());
-        }
-    }
-
-    // Перевод через ResourceBundle
-    public Component translate(@NotNull TranslatableComponent key, @NotNull Locale locale) {
-        if (locale.toString().toLowerCase().contains("ru") && bundle != null) {
-            // Получаем перевод по ключу
+        if (file.exists()) {
             try {
-                String result = bundle.getString(key.key());
-                return Component.text(result);
-            } catch (MissingResourceException e) {
-                // Если ключ не найден, возвращаем исходный ключ
-                plugin.getLogger().warning("Не найден перевод для ключа: " + key.key());
+                translations.load(file);
+                if (!translations.getKeys(false).isEmpty()) return;
+            } catch (Exception ignored) {
             }
         }
 
-        // Если не найден перевод для русской локали, используем fallback
-        return GlobalTranslator.render(key, locale);
+        plugin.getLogger().info("Загрузка языка: " + lang);
+
+        String version = plugin.getServer().getMinecraftVersion();
+        String url = "https://api.github.com/repos/InventivetalentDev/minecraft-assets"
+                + "/contents/assets/minecraft/lang/" + lang + ".json?ref=" + version;
+
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest req = HttpRequest.newBuilder().uri(URI.create(url)).build();
+            HttpResponse<String> resp = client.send(req, HttpResponse.BodyHandlers.ofString());
+
+            JsonObject root = gson.fromJson(resp.body(), JsonObject.class);
+            String base64 = root.get("content").getAsString();
+
+            JsonObject json = gson.fromJson(
+                    new String(Base64Coder.decodeLines(base64)),
+                    JsonObject.class
+            );
+
+            for (Map.Entry<String, JsonElement> e : json.entrySet()) {
+                String key = e.getKey();
+                String value = e.getValue().getAsString();
+
+                if (key.startsWith("entity.minecraft.")) {
+                    String entityKey = key.replace("entity.minecraft.", "");
+                    translations.set("entity." + entityKey, value);
+                }
+
+                if (key.equals("block.minecraft.spawner")) {
+                    translations.set("block.spawner", value);
+                }
+            }
+
+            translations.save(file);
+            plugin.getLogger().info("Язык успешно загружен.");
+
+        } catch (Exception ex) {
+            plugin.getLogger().warning(ex.getMessage());
+            plugin.getLogger().severe("Ошибка загрузки языка!");
+        }
     }
 
-    public String translateToString(@NotNull TranslatableComponent key, @NotNull Locale locale) {
-        return plainSerializer.serialize(translate(key, locale));
+    /**
+     * Перевод блока СПАВНЕР
+     */
+    public String translate(Material mat) {
+        if (mat == Material.SPAWNER) {
+            return translations.getString("block.spawner", "Spawner");
+        }
+        return mat.name().toLowerCase().replace("_", " ");
+    }
+
+    /**
+     * Перевод EntityType
+     */
+    public String translate(EntityType type) {
+        String key = type.getKey().getKey();
+        String def = key.replace("_", " ");
+
+        return translations.getString("entity." + key, def);
     }
 }

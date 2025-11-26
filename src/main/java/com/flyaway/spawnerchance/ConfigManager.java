@@ -84,6 +84,10 @@ public class ConfigManager {
         return message.replaceAll("\\s+$", "");
     }
 
+    public String getLanguage() {
+        return config.getString("language", "ru_RU");
+    }
+
     public void reloadConfig() {
         plugin.reloadConfig();
         this.config = plugin.getConfig();

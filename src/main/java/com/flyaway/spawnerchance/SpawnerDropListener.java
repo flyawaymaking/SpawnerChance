@@ -1,6 +1,5 @@
 package com.flyaway.spawnerchance;
 
-import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -16,7 +15,6 @@ import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
 
 public class SpawnerDropListener implements Listener {
@@ -53,11 +51,10 @@ public class SpawnerDropListener implements Listener {
         event.setDropItems(false);
         event.setExpToDrop(0);
 
-        Locale locale = player.locale();
         CreatureSpawner spawner = (CreatureSpawner) event.getBlock().getState();
 
-        String mobName = getMobDisplayName(spawner.getSpawnedType(), locale);
-        String spawnerName = getTranslationForKey("block.minecraft.spawner", locale);
+        String mobName = getMobDisplayName(spawner.getSpawnedType());
+        String spawnerName = languageManager.translate(Material.SPAWNER);
         String spawnerRawName = configManager.getMessage("mob-spawner").replace("{spawner}", spawnerName).replace("{mob}", mobName);
 
         ItemStack spawnerItem = createSpawnerItem(spawner, spawnerRawName);
@@ -106,14 +103,10 @@ public class SpawnerDropListener implements Listener {
         return spawnerItem;
     }
 
-    private String getMobDisplayName(EntityType entityType, @NotNull Locale locale) {
+    private String getMobDisplayName(EntityType entityType) {
         if (entityType == null) {
             return configManager.getMessage("empty-spawner-name");
         }
-        return getTranslationForKey(entityType.translationKey(), locale);
-    }
-
-    private String getTranslationForKey(@NotNull String key, @NotNull Locale locale) {
-        return languageManager.translateToString(Component.translatable(key), locale);
+        return languageManager.translate(entityType);
     }
 }

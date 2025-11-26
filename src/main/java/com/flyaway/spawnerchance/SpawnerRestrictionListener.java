@@ -11,10 +11,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 
-import net.kyori.adventure.text.Component;
-
-import java.util.Locale;
-
 public class SpawnerRestrictionListener implements Listener {
 
     private final SpawnerChance plugin;
@@ -47,7 +43,7 @@ public class SpawnerRestrictionListener implements Listener {
         EntityType entityType = getEntityTypeFromSpawnEgg(itemInHand);
         if (entityType == null) return;
 
-        String mobName = getMobDisplayName(entityType, player.locale());
+        String mobName = getMobDisplayName(entityType);
 
         if (!plugin.getConfigManager().isMobAllowedInSpawner(entityType)) {
             event.setCancelled(true);
@@ -74,15 +70,11 @@ public class SpawnerRestrictionListener implements Listener {
         return null;
     }
 
-    private String getMobDisplayName(EntityType entityType, Locale locale) {
+    private String getMobDisplayName(EntityType entityType) {
         if (entityType == null) {
             return configManager.getMessage("unknown-mob");
         }
 
-        return getTranslationForKey(entityType.translationKey(), locale);
-    }
-
-    private String getTranslationForKey(String key, Locale locale) {
-        return languageManager.translateToString(Component.translatable(key), locale);
+        return languageManager.translate(entityType);
     }
 }

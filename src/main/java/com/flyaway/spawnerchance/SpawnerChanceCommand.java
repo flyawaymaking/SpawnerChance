@@ -17,7 +17,6 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
     private final LanguageManager languageManager;
     private final TempChanceManager tempChanceManager;
     private final MiniMessage miniMessage;
-    private final Locale defaulLocale = Locale.forLanguageTag("ru-RU");
 
     public SpawnerChanceCommand(SpawnerChance plugin) {
         this.plugin = plugin;
@@ -72,13 +71,6 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
         long hours = durationMinutes / 60;
         long minutes = durationMinutes % 60;
 
-        Locale locale;
-        if (sender instanceof Player player) {
-            locale = player.locale();
-        } else {
-            locale = defaulLocale;
-        }
-
         // Получаем сообщение из конфига и заменяем плейсхолдеры
         String durationMessage = configManager.getMessage("info-duration")
                 .replace("{hours}", String.valueOf(hours))
@@ -95,10 +87,7 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
         } else {
             String mobsList = allowedMobs.stream()
                     .map(mobType -> {
-                        String translated = languageManager.translateToString(
-                                Component.translatable(mobType.translationKey()),
-                                locale
-                        );
+                        String translated = languageManager.translate(mobType);
                         return "<white>" + translated + "</white>";
                     })
                     .collect(Collectors.joining(", "));
