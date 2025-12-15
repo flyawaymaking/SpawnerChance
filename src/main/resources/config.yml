@@ -38,9 +38,9 @@ messages:
     <yellow>/spawnerchance reload</yellow> - Перезагрузить конфиг
     <yellow>/spawnerchance info</yellow> - Информация о плагине
     <yellow>/spawnerchance tempchance <игрок> <шанс></yellow> - Выдать временный шанс
-  bossbar-initial-title: "§6Шанс добыть спавнер: §e{chance}%"
-  bossbar-minutes-left: "§6Шанс добыть спавнер {chance}% - осталось: §e{minutes} мин."
-  bossbar-seconds-left: "§6Шанс добыть спавнер {chance}% - осталось: §c{seconds} сек."
+  bossbar-initial-title: "<gold>Шанс добыть спавнер: <yellow>{chance}%"
+  bossbar-minutes-left: "<gold>Шанс добыть спавнер {chance}% - осталось: <yellow>{minutes} мин."
+  bossbar-seconds-left: "<gold>Шанс добыть спавнер {chance}% - осталось: <red>{seconds} сек."
 
 # Список разрешенных мобов для спавнеров (Добавляйте сюда только тех мобов, которых можно помещать в спавнер)
 # Оставьте пустым, чтобы разрешить всех мобов

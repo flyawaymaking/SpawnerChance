@@ -1,12 +1,10 @@
 package com.flyaway.spawnerchance;
 
+import net.kyori.adventure.bossbar.BossBar;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.Node;
-import org.bukkit.Bukkit;
-import org.bukkit.boss.BarColor;
-import org.bukkit.boss.BarStyle;
-import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -27,6 +25,7 @@ public class TempChanceManager {
     private final ConfigManager configManager;
     private LuckPerms luckPerms;
     private BukkitRunnable updateTask;
+    private final MiniMessage miniMessage = MiniMessage.miniMessage();
 
     private final Map<UUID, BossBar> activeBossBars = new HashMap<>();
 
@@ -39,7 +38,6 @@ public class TempChanceManager {
         startBossBarUpdateTask();
     }
 
-    // Запускаем периодическую задачу для обновления BossBar
     private void startBossBarUpdateTask() {
         this.updateTask = new BukkitRunnable() {
             @Override
@@ -103,23 +101,17 @@ public class TempChanceManager {
             return false; // У игрока уже есть больший шанс
         }
         String path = "players." + playerId;
-
-        if (tempChancesConfig.contains(path)) {
-            removeTempPermission(playerId, tempChancesConfig.getInt(path + ".chance", 0));
-        }
+        if (tempChancesConfig.contains(path)) removeTempPermission(playerId, tempChancesConfig.getInt(path + ".chance", 0));
 
         tempChancesConfig.set(path + ".name", playerName);
         tempChancesConfig.set(path + ".chance", chance);
         tempChancesConfig.set(path + ".expiry", expiryTime);
         tempChancesConfig.set(path + ".given_by", executor);
         tempChancesConfig.set(path + ".given_at", System.currentTimeMillis());
-
         saveTempChances();
 
         boolean success = applyTempPermission(playerId, chance);
-        if (success) {
-            startBossBarForPlayer(player, chance, expiryTime);
-        }
+        if (success) startBossBarForPlayer(player, chance, expiryTime);
         return success;
     }
 
@@ -141,12 +133,9 @@ public class TempChanceManager {
             String permission = "spawner.dropchance." + chance;
             Node node = Node.builder(permission).value(true).build();
             user.data().add(node);
-
-            // Сохраняем изменения
             luckPerms.getUserManager().saveUser(user);
             plugin.getLogger().info("Выдано временное право " + permission + " для " + playerId);
             return true;
-
         } catch (Exception e) {
             plugin.getLogger().warning("Ошибка при выдаче временного права: " + e.getMessage());
             return false;
@@ -154,15 +143,11 @@ public class TempChanceManager {
     }
 
     public boolean removeTempPermission(UUID playerId, int chance) {
-        if (luckPerms == null) {
-            return false;
-        }
-
+        if (luckPerms == null) return false;
         CompletableFuture<User> userFuture = luckPerms.getUserManager().loadUser(playerId);
         try {
             User user = userFuture.join();
             if (user == null) return false;
-
             String permission = "spawner.dropchance." + chance;
 
             // Ищем и удаляем конкретное право
@@ -174,9 +159,7 @@ public class TempChanceManager {
                     break;
                 }
             }
-
             return true;
-
         } catch (Exception e) {
             plugin.getLogger().warning("Ошибка при удалении временного права: " + e.getMessage());
             return false;
@@ -196,11 +179,7 @@ public class TempChanceManager {
                     if (expiry < currentTime) {
                         UUID uuid = UUID.fromString(playerId);
                         int chance = tempChancesConfig.getInt("players." + playerId + ".chance");
-
-                        // Удаляем право через LuckPerms
-                        boolean rightsRemoved = removeTempPermission(uuid, chance);
-
-                        if (rightsRemoved) {
+                        if (removeTempPermission(uuid, chance)) {
                             toRemove.add(playerId);
                             removedCount++;
                             removeBossBar(uuid);
@@ -208,12 +187,7 @@ public class TempChanceManager {
                     }
                 }
             }
-
-            // Удаляем истекшие записи из конфига
-            for (String playerId : toRemove) {
-                tempChancesConfig.set("players." + playerId, null);
-            }
-
+            for (String playerId : toRemove) tempChancesConfig.set("players." + playerId, null);
             if (removedCount > 0) {
                 saveTempChances();
                 plugin.getLogger().info("Автоматически удалено " + removedCount + " истекших временных прав");
@@ -226,14 +200,16 @@ public class TempChanceManager {
     // BossBar методы
     private void startBossBarForPlayer(Player player, int chance, long expiryTime) {
         UUID playerId = player.getUniqueId();
-
         removeBossBar(playerId);
 
         String initialTitle = configManager.getMessage("bossbar-initial-title").replace("{chance}", String.valueOf(chance));
-        BossBar bossBar = Bukkit.createBossBar(initialTitle, BarColor.GREEN, BarStyle.SOLID);
-        bossBar.addPlayer(player);
-        bossBar.setVisible(true);
-
+        BossBar bossBar = BossBar.bossBar(
+                miniMessage.deserialize(initialTitle),
+                1.0f,
+                BossBar.Color.GREEN,
+                BossBar.Overlay.PROGRESS
+        );
+        bossBar.addViewer(player);
         activeBossBars.put(playerId, bossBar);
 
         updateBossBarProgress(playerId, bossBar, expiryTime);
@@ -241,25 +217,20 @@ public class TempChanceManager {
 
     private void updateAllBossBars() {
         long currentTime = System.currentTimeMillis();
-
         for (Map.Entry<UUID, BossBar> entry : new HashMap<>(activeBossBars).entrySet()) {
             UUID playerId = entry.getKey();
             BossBar bossBar = entry.getValue();
-
             String path = "players." + playerId;
             if (!tempChancesConfig.contains(path)) {
                 removeBossBar(playerId);
                 continue;
             }
-
             long expiryTime = tempChancesConfig.getLong(path + ".expiry");
             int chance = tempChancesConfig.getInt(path + ".chance");
-
             if (expiryTime < currentTime) {
                 removeBossBar(playerId);
                 continue;
             }
-
             updateBossBarProgress(playerId, bossBar, expiryTime, chance);
         }
     }
@@ -271,43 +242,46 @@ public class TempChanceManager {
     private void updateBossBarProgress(UUID playerId, BossBar bossBar, long expiryTime, int chance) {
         long currentTime = System.currentTimeMillis();
         long timeLeft = expiryTime - currentTime;
-
         long totalDuration = configManager.getTempChanceDuration() * 60 * 1000L;
         double progress = Math.max(0.0, Math.min(1.0, (double) timeLeft / totalDuration));
-        bossBar.setProgress(progress);
+        bossBar.progress((float) progress);
 
         String timeText;
-        BarColor color;
+        BossBar.Color color;
 
         if (timeLeft > 60000) { // Больше 1 минуты - показываем минуты
             long minutesLeft = timeLeft / 60000;
             timeText = configManager.getMessage("bossbar-minutes-left")
                     .replace("{chance}", String.valueOf(chance))
                     .replace("{minutes}", String.valueOf(minutesLeft));
-            color = minutesLeft > 5 ? BarColor.GREEN : BarColor.YELLOW;
+            color = minutesLeft > 5 ? BossBar.Color.GREEN : BossBar.Color.YELLOW;
         } else { // Меньше 1 минуты - показываем секунды
             long secondsLeft = timeLeft / 1000;
             timeText = configManager.getMessage("bossbar-seconds-left")
                     .replace("{chance}", String.valueOf(chance))
                     .replace("{seconds}", String.valueOf(secondsLeft));
-            color = BarColor.RED;
+            color = BossBar.Color.RED;
         }
 
-        bossBar.setTitle(timeText);
-        bossBar.setColor(color);
+        bossBar.name(miniMessage.deserialize(timeText));
+        bossBar.color(color);
 
-        // Если время вышло, удаляем BossBar
-        if (timeLeft <= 0) {
-            removeBossBar(playerId);
-        }
+        if (timeLeft <= 0) removeBossBar(playerId);
     }
 
     private void removeBossBar(UUID playerId) {
         BossBar bossBar = activeBossBars.remove(playerId);
         if (bossBar != null) {
-            bossBar.removeAll();
-            bossBar.setVisible(false);
-        }
+            List<Player> viewers = new ArrayList<>();
+            for (var viewer : bossBar.viewers()) {
+                if (viewer instanceof Player player) {
+                    viewers.add(player);
+                }
+            }
+            for (Player player : viewers) {
+                bossBar.removeViewer(player);
+            }
+        };;
     }
 
     public void onPlayerQuit(Player player) {
@@ -317,23 +291,15 @@ public class TempChanceManager {
     public void onPlayerJoin(Player player) {
         UUID playerId = player.getUniqueId();
         String path = "players." + playerId;
-
         if (tempChancesConfig.contains(path)) {
             long expiryTime = tempChancesConfig.getLong(path + ".expiry");
             int chance = tempChancesConfig.getInt(path + ".chance");
-
-            if (expiryTime > System.currentTimeMillis()) {
-                startBossBarForPlayer(player, chance, expiryTime);
-            }
+            if (expiryTime > System.currentTimeMillis()) startBossBarForPlayer(player, chance, expiryTime);
         }
     }
 
     public void cleanup() {
-        if (updateTask != null && !updateTask.isCancelled()) {
-            updateTask.cancel();
-        }
-        for (UUID playerId : new HashSet<>(activeBossBars.keySet())) {
-            removeBossBar(playerId);
-        }
+        if (updateTask != null && !updateTask.isCancelled()) updateTask.cancel();
+        for (UUID playerId : new HashSet<>(activeBossBars.keySet())) removeBossBar(playerId);
     }
 }

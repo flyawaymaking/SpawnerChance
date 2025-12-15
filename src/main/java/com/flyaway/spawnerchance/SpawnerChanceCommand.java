@@ -129,7 +129,7 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
             return;
         }
 
-        String executorName = sender instanceof Player ? sender.getName() : "Консоль";
+        String executorName = sender instanceof Player ? sender.getName() : "Console";
         boolean success = tempChanceManager.addTempChance(target, chance, executorName);
 
         if (success) {
