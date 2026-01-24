@@ -11,10 +11,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
-
 public class SpawnerChance extends JavaPlugin {
-
-    private static SpawnerChance instance;
     private ConfigManager configManager;
     private LanguageManager languageManager;
     private TempChanceManager tempChanceManager;
@@ -22,18 +19,13 @@ public class SpawnerChance extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        instance = this;
-
-        // Сохраняем дефолтный конфиг если его нет
         saveDefaultConfig();
 
-        // Инициализация менеджеров
         this.configManager = new ConfigManager(this);
         this.languageManager = new LanguageManager(this);
         this.tempChanceManager = new TempChanceManager(this);
         startCleanupTask();
 
-        // Регистрация слушателей
         getServer().getPluginManager().registerEvents(new SpawnerDropListener(this), this);
         getServer().getPluginManager().registerEvents(new SpawnerPlaceListener(this), this);
         getServer().getPluginManager().registerEvents(new SpawnerRestrictionListener(this), this);
@@ -49,11 +41,18 @@ public class SpawnerChance extends JavaPlugin {
             }
         }, this);
 
-        // Регистрация команд
         getCommand("spawnerchance").setExecutor(new SpawnerChanceCommand(this));
         getCommand("spawnerchance").setTabCompleter(new SpawnerChanceCommand(this));
 
-        getLogger().info("SpawnerChance включён!");
+        hookPlaceholderAPI();
+        getLogger().info("SpawnerChance enabled!");
+    }
+
+    private void hookPlaceholderAPI() {
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new SpawnerChancePlaceholder(this).register();
+            getLogger().info("PlaceholderAPI found, placeholders enabled");
+        }
     }
 
     @Override
@@ -61,35 +60,30 @@ public class SpawnerChance extends JavaPlugin {
         if (cleanupTask != null && !cleanupTask.isCancelled()) {
             cleanupTask.cancel();
         }
-        // Сохраняем временные права при выключении
+
         if (tempChanceManager != null) {
             tempChanceManager.saveTempChances();
             tempChanceManager.cleanup();
         }
 
-        getLogger().info("SpawnerChance выключен!");
+        getLogger().info("SpawnerChance disabled!");
     }
 
     private void startCleanupTask() {
-        // Получаем интервал из конфига (в минутах, по умолчанию 5 минут)
-        long cleanupInterval = configManager.getCleanupInterval() * 20; // Конвертируем в тики
+        long cleanupInterval = configManager.getCleanupInterval() * 20;
 
         this.cleanupTask = new BukkitRunnable() {
             @Override
             public void run() {
                 int cleaned = tempChanceManager.cleanupExpiredChances();
                 if (cleaned > 0) {
-                    getLogger().info("Периодическая очистка: удалено " + cleaned + " истекших временных прав");
+                    getLogger().info("Periodic cleaning: removed " + cleaned + " expired temporary permissions");
                 }
             }
         };
         cleanupTask.runTaskTimer(this, cleanupInterval, cleanupInterval);
 
-        getLogger().info("Задача очистки истекших прав запущена с интервалом " + configManager.getCleanupInterval() + " секунд");
-    }
-
-    public static SpawnerChance getInstance() {
-        return instance;
+        getLogger().info("The task of clearing expired permissions is started with an interval " + configManager.getCleanupInterval() + " seconds");
     }
 
     public ConfigManager getConfigManager() {
@@ -118,7 +112,8 @@ public class SpawnerChance extends JavaPlugin {
                         maxChance = value;
                         if (maxChance >= 100) break;
                     }
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             }
         }
         return maxChance;

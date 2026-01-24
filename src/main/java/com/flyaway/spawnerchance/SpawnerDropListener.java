@@ -33,7 +33,7 @@ public class SpawnerDropListener implements Listener {
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
         if (event.isCancelled() || event.getBlock().getType() != Material.SPAWNER) return;
-        if (event.getExpToDrop() == 0) return; // Already processed
+        if (event.getExpToDrop() == 0) return;
 
         Player player = event.getPlayer();
         int chance = plugin.getDropChance(player);

@@ -23,7 +23,7 @@ public class ConfigManager {
         allowedSpawnerMobs = new HashSet<>();
 
         if (!config.contains("allowed-spawner-mobs")) {
-            plugin.getLogger().warning("В конфиге нет раздела 'allowed-spawner-mobs'! Используются мобы по умолчанию.");
+            plugin.getLogger().warning("There is no section in the config 'allowed-spawner-mobs'! Default mobs are used.");
             setDefaultMobs();
             return;
         }
@@ -33,15 +33,14 @@ public class ConfigManager {
                 EntityType entityType = EntityType.valueOf(mobName.toUpperCase());
                 allowedSpawnerMobs.add(entityType);
             } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Неизвестный тип моба: " + mobName);
+                plugin.getLogger().warning("Unknown type of mob: " + mobName);
             }
         }
 
-        plugin.getLogger().info("Загружено " + allowedSpawnerMobs.size() + " разрешенных мобов для спавнеров");
+        plugin.getLogger().info("Loaded " + allowedSpawnerMobs.size() + " allowed mobs for spawners");
     }
 
     private void setDefaultMobs() {
-        // Базовые мобы по умолчанию
         allowedSpawnerMobs.add(EntityType.ZOMBIE);
         allowedSpawnerMobs.add(EntityType.SKELETON);
         allowedSpawnerMobs.add(EntityType.SPIDER);
@@ -54,7 +53,6 @@ public class ConfigManager {
         allowedSpawnerMobs.add(EntityType.SLIME);
         allowedSpawnerMobs.add(EntityType.MAGMA_CUBE);
 
-        // Сохраняем мобы по умолчанию в конфиг
         List<String> defaultMobs = new ArrayList<>();
         for (EntityType type : allowedSpawnerMobs) {
             defaultMobs.add(type.name());
@@ -68,7 +66,7 @@ public class ConfigManager {
     }
 
     public long getTempChanceDuration() {
-        return config.getLong("temp-chance-duration", 60L); // Конвертируем в минутах
+        return config.getLong("temp-chance-duration", 60L); // В минутах
     }
 
     public long getCleanupInterval() {

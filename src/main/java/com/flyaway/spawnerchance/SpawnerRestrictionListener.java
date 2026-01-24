@@ -63,7 +63,7 @@ public class SpawnerRestrictionListener implements Listener {
             try {
                 return EntityType.valueOf(mobName);
             } catch (IllegalArgumentException e) {
-                plugin.getLogger().warning("Неизвестный тип яйца призыва: " + mobName);
+                plugin.getLogger().warning("Unknown type of Summoning Egg: " + mobName);
                 return null;
             }
         }

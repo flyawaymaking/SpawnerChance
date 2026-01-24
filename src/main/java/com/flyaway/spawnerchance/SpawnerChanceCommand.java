@@ -28,7 +28,6 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        // Проверка основного права доступа к командам плагина
         if (!sender.hasPermission("spawner.command.use") && !(sender instanceof ConsoleCommandSender)) {
             String noPermission = configManager.getMessage("no-permission");
             plugin.sendMessage(sender, miniMessage.deserialize(noPermission));
@@ -71,7 +70,6 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
         long hours = durationMinutes / 60;
         long minutes = durationMinutes % 60;
 
-        // Получаем сообщение из конфига и заменяем плейсхолдеры
         String durationMessage = configManager.getMessage("info-duration")
                 .replace("{hours}", String.valueOf(hours))
                 .replace("{minutes}", String.valueOf(minutes));
@@ -139,14 +137,12 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
 
             String durationText = (hours > 0 ? hours + "ч " : "") + minutes + "м";
 
-            // Сообщение для отправителя
             String senderMessage = configManager.getMessage("tempchance-success-sender")
                     .replace("{player}", target.getName())
                     .replace("{chance}", String.valueOf(chance))
                     .replace("{duration}", durationText);
             plugin.sendMessage(sender, miniMessage.deserialize(senderMessage));
 
-            // Сообщение для целевого игрока
             String targetMessage = configManager.getMessage("tempchance-success-target")
                     .replace("{chance}", String.valueOf(chance))
                     .replace("{duration}", durationText);
@@ -167,7 +163,6 @@ public class SpawnerChanceCommand implements CommandExecutor, TabExecutor {
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        // Проверяем основное право доступа к таб-комплиту
         if (!sender.hasPermission("spawner.command.use") && !(sender instanceof ConsoleCommandSender)) {
             return Collections.emptyList();
         }

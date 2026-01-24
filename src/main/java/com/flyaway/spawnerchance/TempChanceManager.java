@@ -45,7 +45,7 @@ public class TempChanceManager {
                 updateAllBossBars();
             }
         };
-        updateTask.runTaskTimer(plugin, 0L, 20L); // Обновляем каждую секунду
+        updateTask.runTaskTimer(plugin, 0L, 20L);
     }
 
     private void initLuckPerms() {
@@ -54,12 +54,12 @@ public class TempChanceManager {
                     plugin.getServer().getServicesManager().getRegistration(LuckPerms.class);
             if (provider != null) {
                 luckPerms = provider.getProvider();
-                plugin.getLogger().info("LuckPerms обнаружен, используется API.");
+                plugin.getLogger().info("LuckPerms API detected and in use.");
             } else {
-                plugin.getLogger().warning("LuckPerms установлен, но провайдер не найден!");
+                plugin.getLogger().warning("LuckPerms installed, but the provider was not found!");
             }
         } else {
-            plugin.getLogger().warning("LuckPerms не обнаружен! Временные права работать не будут.");
+            plugin.getLogger().warning("LuckPerms not detected! Temporary rights will not work.");
         }
     }
 
@@ -68,9 +68,9 @@ public class TempChanceManager {
             try {
                 plugin.getDataFolder().mkdirs();
                 tempChancesFile.createNewFile();
-                plugin.getLogger().info("Создан новый файл tempchances.yml");
+                plugin.getLogger().info("A new file has been created tempchances.yml");
             } catch (IOException e) {
-                plugin.getLogger().warning("Не удалось создать tempchances.yml: " + e.getMessage());
+                plugin.getLogger().warning("Failed to create tempchances.yml: " + e.getMessage());
             }
         }
         tempChancesConfig = YamlConfiguration.loadConfiguration(tempChancesFile);
@@ -85,7 +85,7 @@ public class TempChanceManager {
         try {
             tempChancesConfig.save(tempChancesFile);
         } catch (IOException e) {
-            plugin.getLogger().warning("Не удалось сохранить tempchances.yml: " + e.getMessage());
+            plugin.getLogger().warning("Couldn't save tempchances.yml: " + e.getMessage());
         }
     }
 
@@ -95,10 +95,9 @@ public class TempChanceManager {
         long duration = configManager.getTempChanceDuration();
         long expiryTime = System.currentTimeMillis() + duration * 60 * 1000;
 
-        // Проверяем текущий шанс игрока
         int currentChance = plugin.getDropChance(player);
         if (currentChance > chance) {
-            return false; // У игрока уже есть больший шанс
+            return false;
         }
         String path = "players." + playerId;
         if (tempChancesConfig.contains(path)) removeTempPermission(playerId, tempChancesConfig.getInt(path + ".chance", 0));
@@ -117,7 +116,7 @@ public class TempChanceManager {
 
     private boolean applyTempPermission(UUID playerId, int chance) {
         if (luckPerms == null) {
-            plugin.getLogger().warning("LuckPerms не доступен, невозможно выдать временное право");
+            plugin.getLogger().warning("LuckPerms is not available, it is impossible to grant a temporary permission");
             return false;
         }
 
@@ -125,19 +124,18 @@ public class TempChanceManager {
         try {
             User user = userFuture.join();
             if (user == null) {
-                plugin.getLogger().warning("Не удалось загрузить пользователя: " + playerId);
+                plugin.getLogger().warning("Couldn't upload user: " + playerId);
                 return false;
             }
 
-            // Добавляем новое право
             String permission = "spawner.dropchance." + chance;
             Node node = Node.builder(permission).value(true).build();
             user.data().add(node);
             luckPerms.getUserManager().saveUser(user);
-            plugin.getLogger().info("Выдано временное право " + permission + " для " + playerId);
+            plugin.getLogger().info("A temporary permission has been granted " + permission + " for " + playerId);
             return true;
         } catch (Exception e) {
-            plugin.getLogger().warning("Ошибка при выдаче временного права: " + e.getMessage());
+            plugin.getLogger().warning("Error when granting a temporary permission: " + e.getMessage());
             return false;
         }
     }
@@ -150,18 +148,17 @@ public class TempChanceManager {
             if (user == null) return false;
             String permission = "spawner.dropchance." + chance;
 
-            // Ищем и удаляем конкретное право
             for (Node node : user.getNodes()) {
                 if (node.getKey().equals(permission)) {
                     user.data().remove(node);
                     luckPerms.getUserManager().saveUser(user);
-                    plugin.getLogger().info("Удалено временное право " + permission + " для " + playerId);
+                    plugin.getLogger().info("Temporary permission removed " + permission + " for " + playerId);
                     break;
                 }
             }
             return true;
         } catch (Exception e) {
-            plugin.getLogger().warning("Ошибка при удалении временного права: " + e.getMessage());
+            plugin.getLogger().warning("Error when deleting a temporary permission: " + e.getMessage());
             return false;
         }
     }
@@ -190,14 +187,13 @@ public class TempChanceManager {
             for (String playerId : toRemove) tempChancesConfig.set("players." + playerId, null);
             if (removedCount > 0) {
                 saveTempChances();
-                plugin.getLogger().info("Автоматически удалено " + removedCount + " истекших временных прав");
+                plugin.getLogger().info("Automatically deleted " + removedCount + " expired temporary permissions");
             }
         }
 
         return removedCount;
     }
 
-    // BossBar методы
     private void startBossBarForPlayer(Player player, int chance, long expiryTime) {
         UUID playerId = player.getUniqueId();
         removeBossBar(playerId);
@@ -249,13 +245,13 @@ public class TempChanceManager {
         String timeText;
         BossBar.Color color;
 
-        if (timeLeft > 60000) { // Больше 1 минуты - показываем минуты
-            long minutesLeft = timeLeft / 60000;
+        if (timeLeft > 60 * 1000) {
+            long minutesLeft = timeLeft / 60 * 1000;
             timeText = configManager.getMessage("bossbar-minutes-left")
                     .replace("{chance}", String.valueOf(chance))
                     .replace("{minutes}", String.valueOf(minutesLeft));
             color = minutesLeft > 5 ? BossBar.Color.GREEN : BossBar.Color.YELLOW;
-        } else { // Меньше 1 минуты - показываем секунды
+        } else {
             long secondsLeft = timeLeft / 1000;
             timeText = configManager.getMessage("bossbar-seconds-left")
                     .replace("{chance}", String.valueOf(chance))
