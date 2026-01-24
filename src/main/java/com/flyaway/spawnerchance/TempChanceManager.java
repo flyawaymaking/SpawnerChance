@@ -277,7 +277,7 @@ public class TempChanceManager {
             for (Player player : viewers) {
                 bossBar.removeViewer(player);
             }
-        };;
+        };
     }
 
     public void onPlayerQuit(Player player) {
