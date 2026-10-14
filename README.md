@@ -1,5 +1,8 @@
 # SpawnerChance
 
+[![Modrinth Downloads](https://img.shields.io/modrinth/dt/spawnerchance?logo=modrinth&label=downloads&color=1bd96a)](https://modrinth.com/plugin/spawnerchance)
+[![Modrinth Followers](https://img.shields.io/modrinth/followers/spawnerchance?logo=modrinth&label=followers&color=1bd96a)](https://modrinth.com/plugin/spawnerchance)
+
 Плагин для управления спавнерами с тремя основными функциями:
 1) Шанс выпадения спавнеров при разрушении (через пермишены)
 2) Выдача временного права на шанс выпадения спавнера (через команду)
